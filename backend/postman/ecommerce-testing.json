@@ -1,0 +1,921 @@
+{
+  "info": {
+    "name": "Glow & Grace E-Commerce API",
+    "description": "Complete API collection for the Glow & Grace skincare e-commerce platform.\\n\\n## Base URL\\nAll requests use `{{base_url}}` — set this variable (default: http://127.0.0.1:8000/api).\\n\\n## Authentication\\n- **Register** or **Login** to get a token.\\n- The collection has a `token` variable that gets auto-set via the Login/Register test scripts.\\n- Protected routes automatically include `Authorization: Bearer {{token}}`.\\n\\n## Workflow Order\\n1. Register or Login as a customer\\n2. Browse products & categories\\n3. Add items to cart / wishlist\\n4. Checkout (requires a saved address)\\n5. View orders & submit reviews",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "codebuff"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_slug",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "category_slug",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cart_item_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "review_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "address_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "description": "Authentication endpoints — register, login, logout, and get the current user.",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.collectionVariables.set('product_id', '');",
+                  "    pm.collectionVariables.set('cart_item_id', '');",
+                  "    console.log('Token saved:', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"phone\": \"+855-12-345-678\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/register",
+              "host": ["{{base_url}}"],
+              "path": ["register"]
+            },
+            "description": "Register a new customer account. Returns a user object + Bearer token.\\n\\n**Validation rules:**\\n- `name` — required, string, max:255\\n- `email` — required, email, unique:users\\n- `phone` — nullable, string, max:20\\n- `password` — required, string, min:8, confirmed\\n- `password_confirmation` — required (must match password)"
+          },
+          "response": [
+            {
+              "name": "Registration Success",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"message\": \"Registration successful.\",\n  \"user\": {\n    \"id\": 3,\n    \"name\": \"Jane Doe\",\n    \"email\": \"jane@example.com\",\n    \"phone\": \"+855-12-345-678\",\n    \"avatar\": null,\n    \"status\": \"active\",\n    \"created_at\": \"2026-07-01T10:30:00.000000Z\"\n  },\n  \"token\": \"3|abc123def456...\"\n}"
+            },
+            {
+              "name": "Validation Error",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"message\": \"The email has already been taken.\",\n  \"errors\": {\n    \"email\": [\"The email has already been taken.\"]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token saved:', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane@example.com\",\n  \"password\": \"password123\",\n  \"device_name\": \"postman\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            },
+            "description": "Authenticate with email + password. Returns a user object + Bearer token.\\n\\n**Tip:** Use the pre-seeded customer account: `customer@test.com` / `password`\\n\\n**Validation rules:**\\n- `email` — required, email\\n- `password` — required, string, min:6\\n- `device_name` — nullable, string, max:255"
+          },
+          "response": [
+            {
+              "name": "Login Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"message\": \"Login successful.\",\n  \"user\": {\n    \"id\": 1,\n    \"name\": \"John Customer\",\n    \"email\": \"customer@test.com\",\n    \"phone\": \"+1-555-0101\",\n    \"avatar\": null,\n    \"status\": \"active\",\n    \"created_at\": \"2026-07-01T10:00:00.000000Z\"\n  },\n  \"token\": \"2|def789ghi012...\"\n}"
+            },
+            {
+              "name": "Invalid Credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"message\": \"Invalid email or password.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user",
+              "host": ["{{base_url}}"],
+              "path": ["user"]
+            },
+            "description": "Get the authenticated user's profile. Requires Bearer token."
+          },
+          "response": [
+            {
+              "name": "User Profile",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"user\": {\n    \"id\": 1,\n    \"name\": \"John Customer\",\n    \"email\": \"customer@test.com\",\n    \"phone\": \"+1-555-0101\",\n    \"avatar\": null,\n    \"status\": \"active\",\n    \"created_at\": \"2026-07-01T10:00:00.000000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": ["{{base_url}}"],
+              "path": ["logout"]
+            },
+            "description": "Revoke the current API token. Requires Bearer token."
+          },
+          "response": [
+            {
+              "name": "Logout Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"message\": \"Logged out successfully.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📦 Products",
+      "description": "Browse and search products. All endpoints are public (no auth required).",
+      "item": [
+        {
+          "name": "List Products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.data && json.data.length > 0) {",
+                  "        pm.collectionVariables.set('product_id', json.data[0].id.toString());",
+                  "        pm.collectionVariables.set('product_slug', json.data[0].slug);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products?per_page=12&sort=latest",
+              "host": ["{{base_url}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "per_page", "value": "12", "description": "Results per page (max 50)" },
+                { "key": "sort", "value": "latest", "description": "latest, oldest, price_asc, price_desc, name_asc" },
+                { "key": "category_id", "value": "", "description": "Filter by category ID", "disabled": true },
+                { "key": "featured", "value": "1", "description": "Filter featured products only", "disabled": true },
+                { "key": "min_price", "value": "", "description": "Minimum price filter", "disabled": true },
+                { "key": "max_price", "value": "", "description": "Maximum price filter", "disabled": true }
+              ]
+            },
+            "description": "List active products with optional filters. Public endpoint.\\n\\n**Query parameters:**\\n- `per_page` — results per page (default: 12, max: 50)\\n- `sort` — sort order: latest, oldest, price_asc, price_desc, name_asc\\n- `category_id` — filter by category\\n- `featured` — 1 to show only featured products\\n- `min_price` / `max_price` — price range filter"
+          },
+          "response": [
+            {
+              "name": "Products List",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Hydrating Facial Serum\",\n      \"slug\": \"hydrating-facial-serum\",\n      \"short_description\": \"A lightweight serum for deep hydration\",\n      \"price\": 29.99,\n      \"compare_price\": 39.99,\n      \"has_discount\": true,\n      \"discount_percent\": 25,\n      \"in_stock\": true,\n      \"quantity\": 50,\n      \"is_featured\": true,\n      \"primary_image\": \"http://127.0.0.1:8000/storage/products/1-primary.jpg\",\n      \"category\": {\n        \"id\": 1,\n        \"name\": \"Skincare\",\n        \"slug\": \"skincare\",\n        \"description\": null,\n        \"image\": null,\n        \"sort_order\": 1,\n        \"products_count\": 10,\n        \"children\": []\n      },\n      \"created_at\": \"2026-07-01T10:00:00.000000Z\"\n    }\n  ],\n  \"meta\": {\n    \"current_page\": 1,\n    \"last_page\": 3,\n    \"total\": 31,\n    \"per_page\": 12\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Product by Slug",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.data && json.data.id) {",
+                  "        pm.collectionVariables.set('product_id', json.data.id.toString());",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_slug}}"]
+            },
+            "description": "Get a single product by its URL slug. Include slug from the list products response.\\n\\n**Try:** `hydrating-facial-serum` or `vitamin-c-moisturizer`"
+          },
+          "response": [
+            {
+              "name": "Product Detail",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Hydrating Facial Serum\",\n    \"slug\": \"hydrating-facial-serum\",\n    \"description\": \"A lightweight, fast-absorbing serum...\",\n    \"short_description\": \"A lightweight serum for deep hydration\",\n    \"price\": 29.99,\n    \"compare_price\": 39.99,\n    \"has_discount\": true,\n    \"discount_percent\": 25,\n    \"in_stock\": true,\n    \"quantity\": 50,\n    \"sku\": \"SERUM-HYD-001\",\n    \"barcode\": null,\n    \"is_featured\": true,\n    \"category\": { ... },\n    \"images\": [\n      {\n        \"id\": 1,\n        \"url\": \"http://127.0.0.1:8000/storage/products/1-primary.jpg\",\n        \"alt\": \"Hydrating Facial Serum\",\n        \"is_primary\": true,\n        \"sort_order\": 1\n      }\n    ],\n    \"reviews_summary\": {\n      \"total\": 0,\n      \"average\": 0,\n      \"ratings\": {}\n    },\n    \"created_at\": \"2026-07-01T10:00:00.000000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/search?q=serum",
+              "host": ["{{base_url}}"],
+              "path": ["products", "search"],
+              "query": [
+                { "key": "q", "value": "serum", "description": "Search keyword (required, min: 2 chars)" }
+              ]
+            },
+            "description": "Search products by name, description, or SKU.\\n\\n**Try:** `serum`, `moisturizer`, `vitamin`, `mask`"
+          },
+          "response": [
+            {
+              "name": "Search Results",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"data\": [ ... ],\n  \"meta\": {\n    \"current_page\": 1,\n    \"last_page\": 1,\n    \"total\": 3,\n    \"query\": \"serum\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📂 Categories",
+      "description": "Browse categories. All endpoints are public.",
+      "item": [
+        {
+          "name": "List Categories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.data && json.data.length > 0) {",
+                  "        pm.collectionVariables.set('category_slug', json.data[0].slug);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": ["{{base_url}}"],
+              "path": ["categories"]
+            },
+            "description": "List all active parent categories with nested children. Each includes product count."
+          },
+          "response": [
+            {
+              "name": "Categories List",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Skincare\",\n      \"slug\": \"skincare\",\n      \"description\": null,\n      \"image\": null,\n      \"sort_order\": 1,\n      \"products_count\": 10,\n      \"children\": [\n        {\n          \"id\": 6,\n          \"name\": \"Face Wash\",\n          \"slug\": \"face-wash\",\n          \"sort_order\": 1,\n          \"products_count\": 3,\n          \"children\": []\n        }\n      ]\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Category by Slug",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories/{{category_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "{{category_slug}}"]
+            },
+            "description": "Get a single category by slug with its active products (paginated).\\n\\n**Try:** `skincare`, `face-wash`, `moisturizers`"
+          },
+          "response": [
+            {
+              "name": "Category Detail",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"data\": {\n    \"category\": {\n      \"id\": 1,\n      \"name\": \"Skincare\",\n      \"slug\": \"skincare\",\n      \"children\": [ ... ]\n    },\n    \"products\": {\n      \"data\": [ ... ],\n      \"meta\": { \"current_page\": 1, \"last_page\": 1, \"total\": 10 }\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🛒 Cart",
+      "description": "Manage the authenticated user's shopping cart. All endpoints require a Bearer token.",
+      "item": [
+        {
+          "name": "Get Cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart",
+              "host": ["{{base_url}}"],
+              "path": ["cart"]
+            },
+            "description": "Get the authenticated user's cart with items, product details, totals, and quantity summary."
+          },
+          "response": [
+            {
+              "name": "Cart With Items",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": 1,\n    \"items\": [\n      {\n        \"id\": 1,\n        \"product_id\": 1,\n        \"quantity\": 2,\n        \"product\": {\n          \"name\": \"Hydrating Facial Serum\",\n          \"slug\": \"hydrating-facial-serum\",\n          \"price\": 29.99,\n          \"image\": \"http://127.0.0.1:8000/storage/products/1-primary.jpg\",\n          \"in_stock\": true\n        },\n        \"subtotal\": 59.98\n      }\n    ],\n    \"total\": 59.98,\n    \"total_quantity\": 2\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Add to Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.data && json.data.items && json.data.items.length > 0) {",
+                  "        var lastItem = json.data.items[json.data.items.length - 1];",
+                  "        pm.collectionVariables.set('cart_item_id', lastItem.id.toString());",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": {{product_id}},\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cart",
+              "host": ["{{base_url}}"],
+              "path": ["cart"]
+            },
+            "description": "Add a product to the cart. If the product is already in the cart, the quantity is incremented.\\n\\n**Validation rules:**\\n- `product_id` — required, must exist in products table\\n- `quantity` — required, integer, min:1, max:100\\n\\nReturns 400 if stock is insufficient."
+          }
+        },
+        {
+          "name": "Update Cart Item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": {{product_id}},\n  \"quantity\": 3\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cart/{{cart_item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "{{cart_item_id}}"]
+            },
+            "description": "Update the quantity of a specific cart item. Uses the same validation as adding.\\n\\n**Note:** Replace `{{cart_item_id}}` with a real ID from the Get Cart response."
+          }
+        },
+        {
+          "name": "Remove Cart Item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart/{{cart_item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "{{cart_item_id}}"]
+            },
+            "description": "Remove a specific item from the cart. Returns 403 if the item doesn't belong to the authenticated user."
+          }
+        }
+      ]
+    },
+    {
+      "name": "❤️ Wishlist",
+      "description": "Manage the authenticated user's wishlist. All endpoints require a Bearer token.",
+      "item": [
+        {
+          "name": "Get Wishlist",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wishlist",
+              "host": ["{{base_url}}"],
+              "path": ["wishlist"]
+            },
+            "description": "Get the authenticated user's wishlist with product details (name, slug, price, stock status, image)."
+          },
+          "response": [
+            {
+              "name": "Wishlist With Items",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"product_id\": 1,\n      \"product\": {\n        \"id\": 1,\n        \"name\": \"Hydrating Facial Serum\",\n        \"slug\": \"hydrating-facial-serum\",\n        \"price\": 29.99,\n        \"in_stock\": true,\n        \"image\": \"http://127.0.0.1:8000/storage/products/1-primary.jpg\"\n      },\n      \"created_at\": \"2026-07-01T10:30:00.000000Z\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Add to Wishlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": {{product_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wishlist",
+              "host": ["{{base_url}}"],
+              "path": ["wishlist"]
+            },
+            "description": "Add a product to the wishlist. Returns 200 if already in wishlist (with the existing item ID).\\n\\n**Validation:**\\n- `product_id` — required, must reference an existing product"
+          },
+          "response": [
+            {
+              "name": "Added Success",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"message\": \"Added to wishlist.\",\n  \"data\": {\n    \"id\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Remove from Wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wishlist/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["wishlist", "{{product_id}}"]
+            },
+            "description": "Remove a product from the wishlist by its product ID. Returns 404 if the product was not in the wishlist."
+          },
+          "response": [
+            {
+              "name": "Removed Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"message\": \"Removed from wishlist.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "💳 Checkout",
+      "description": "Process checkout and create an order. Requires a Bearer token and items in the cart.",
+      "item": [
+        {
+          "name": "Place Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipping_address_id\": {{address_id}},\n  \"billing_address_id\": {{address_id}},\n  \"payment_method\": \"cod\",\n  \"coupon_code\": \"\",\n  \"notes\": \"Please leave at the door.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/checkout",
+              "host": ["{{base_url}}"],
+              "path": ["checkout"]
+            },
+            "description": "Process checkout — converts cart items into an order, decrements stock, and clears the cart.\\n\\n**Prerequisites:**\\n1. Login and get a token\\n2. Add items to the cart\\n3. Create an address for the user (via DB seeder or manual insert)\\n\\n**Validation rules:**\\n- `shipping_address_id` — required, must be an address belonging to the user\\n- `billing_address_id` — nullable, defaults to shipping address if not provided\\n- `payment_method` — nullable (default: \"cod\")\\n- `coupon_code` — nullable, must reference an existing coupon\\n- `notes` — nullable, max:1000\\n\\n**Cart must not be empty!** Returns 400 if cart is empty."
+          },
+          "response": [
+            {
+              "name": "Order Created",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"message\": \"Order placed successfully!\",\n  \"data\": {\n    \"id\": 1,\n    \"order_number\": \"ORD-20260701-A1B2C3\",\n    \"status\": \"pending\",\n    \"payment_status\": \"pending\",\n    \"payment_method\": \"cod\",\n    \"subtotal\": 59.98,\n    \"tax_amount\": 4.80,\n    \"shipping_amount\": 9.99,\n    \"discount_amount\": 0,\n    \"total\": 74.77,\n    \"notes\": \"Please leave at the door.\",\n    \"items\": [\n      {\n        \"product_name\": \"Hydrating Facial Serum\",\n        \"product_price\": 29.99,\n        \"quantity\": 2,\n        \"unit_price\": 29.99,\n        \"subtotal\": 59.98\n      }\n    ],\n    \"shipping_address\": {\n      \"full_name\": \"John Customer\",\n      \"address_line1\": \"123 Main St\",\n      \"address_line2\": null,\n      \"city\": \"Phnom Penh\",\n      \"state\": \"PP\",\n      \"country\": \"Cambodia\",\n      \"postal_code\": \"12000\",\n      \"phone\": \"+855-12-345-678\"\n    },\n    \"created_at\": \"2026-07-01T10:30:00.000000Z\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📋 Orders",
+      "description": "View the authenticated user's order history and order details. Requires a Bearer token.",
+      "item": [
+        {
+          "name": "List My Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.data && json.data.length > 0) {",
+                  "        pm.collectionVariables.set('order_id', json.data[0].id.toString());",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            },
+            "description": "Get the authenticated user's orders with pagination (10 per page)."
+          },
+          "response": [
+            {
+              "name": "Orders List",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"order_number\": \"ORD-20260701-A1B2C3\",\n      \"status\": \"pending\",\n      \"payment_status\": \"pending\",\n      \"payment_method\": \"cod\",\n      \"subtotal\": 59.98,\n      \"tax_amount\": 4.80,\n      \"shipping_amount\": 9.99,\n      \"discount_amount\": 0,\n      \"total\": 74.77,\n      \"notes\": null,\n      \"items\": [ ... ],\n      \"created_at\": \"2026-07-01T10:30:00.000000Z\"\n    }\n  ],\n  \"meta\": {\n    \"current_page\": 1,\n    \"last_page\": 1,\n    \"total\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Order Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "{{order_id}}"]
+            },
+            "description": "Get a single order with items and shipping address.\\n\\nReturns 403 if the order doesn't belong to the authenticated user."
+          }
+        }
+      ]
+    },
+    {
+      "name": "⭐ Reviews",
+      "description": "View product reviews and submit new reviews. Index is public, store requires auth.",
+      "item": [
+        {
+          "name": "List Product Reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}", "reviews"]
+            },
+            "description": "Get approved reviews for a product. Public endpoint.\\n\\nResponse includes: `average_rating`, `total_reviews`, paginated review list."
+          },
+          "response": [
+            {
+              "name": "Reviews List",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"rating\": 5,\n      \"title\": \"Love this serum!\",\n      \"content\": \"My skin feels amazing after using this.\",\n      \"is_verified_purchase\": true,\n      \"user\": {\n        \"id\": 1,\n        \"name\": \"John Customer\"\n      },\n      \"created_at\": \"2 days ago\"\n    }\n  ],\n  \"meta\": {\n    \"average_rating\": 5,\n    \"total_reviews\": 1,\n    \"current_page\": 1,\n    \"last_page\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Submit Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": {{product_id}},\n  \"rating\": 5,\n  \"title\": \"Amazing product!\",\n  \"content\": \"This serum transformed my skincare routine. Highly recommend!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["reviews"]
+            },
+            "description": "Submit a review for a product.\\n\\n**Validation rules:**\\n- `product_id` — required, must exist\\n- `rating` — required, integer, 1–5\\n- `title` — nullable, max:255\\n- `content` — nullable, max:2000\\n\\n**Notes:**\\n- One review per product per user (returns 409 if duplicate)\\n- Reviews are auto-approved\\n- `is_verified_purchase` is auto-set based on order history"
+          },
+          "response": [
+            {
+              "name": "Review Submitted",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"message\": \"Review submitted successfully.\",\n  \"data\": {\n    \"id\": 1,\n    \"rating\": 5,\n    \"title\": \"Amazing product!\",\n    \"content\": \"This serum transformed my skincare routine.\",\n    \"is_verified_purchase\": true,\n    \"user\": { \"id\": 1, \"name\": \"John Customer\" },\n    \"created_at\": \"1 second ago\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
